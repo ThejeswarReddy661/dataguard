@@ -1,0 +1,9 @@
+customer_id,name,age,email,salary
+1001,John,28,john@gmail.com,65000
+1002,Sarah,31,sarah@gmail.com,72000
+1003,Mike,-5,,80000
+1003,Mike,-5,,80000
+1004,Emma,240,emma@gmail.com,70000
+1005,David,35,davidgmail.com,9500000
+1006,Lisa,29,lisa@gmail.com,68000
+1007,Robert,,robert@gmail.com,75000

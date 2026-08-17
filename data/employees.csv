@@ -1,0 +1,9 @@
+employee_id,name,experience,email,salary
+E001,Alice,5,alice@company.com,70000
+E002,Bob,10,bob@company.com,85000
+E003,Carol,-2,carol@company.com,90000
+E003,Carol,-2,carol@company.com,90000
+E004,David,65,davidcompany.com,120000
+E005,Eva,8,eva@company.com,78000
+E006,Frank,,frank@company.com,82000
+E007,Grace,12,grace@company.com,1500000

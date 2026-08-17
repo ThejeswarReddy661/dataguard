@@ -1,0 +1,24 @@
+{
+    "unique_columns": [
+        "customer_id"
+    ],
+
+    "range_rules": {
+        "age": {
+            "min": 0,
+            "max": 120
+        },
+
+        "salary": {
+            "min": 0
+        }
+    },
+
+    "format_rules": {
+        "email": "email"
+    },
+
+    "outlier_columns": [
+        "salary"
+    ]
+}

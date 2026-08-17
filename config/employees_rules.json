@@ -1,0 +1,24 @@
+{
+    "unique_columns": [
+        "employee_id"
+    ],
+
+    "range_rules": {
+        "experience": {
+            "min": 0,
+            "max": 60
+        },
+
+        "salary": {
+            "min": 0
+        }
+    },
+
+    "format_rules": {
+        "email": "email"
+    },
+
+    "outlier_columns": [
+        "salary"
+    ]
+}
