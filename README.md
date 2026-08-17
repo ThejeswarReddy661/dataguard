@@ -41,65 +41,38 @@ This allows the same engine to validate multiple datasets using different rule c
 
 ## Architecture
 
-````mermaid
+```mermaid
 flowchart TD
+    A["CSV Dataset"] --> C["DataGuard Engine"]
+    B["JSON Rules"] --> C
 
-    A[CSV Dataset] --> C[DataGuard Engine]
-    B[JSON Rules] --> C
+    C --> D["Data Loader"]
+    D --> E["Data Profiler"]
 
-    C --> D[Data Loader]
-    D --> E[Data Profiler]
+    E --> F["Missing Value Analysis"]
+    E --> G["Duplicate Detection"]
+    E --> H["Statistics"]
+    E --> I["IQR Outlier Detection"]
 
-    E --> F[Missing Value Analysis]
-    E --> G[Duplicate Detection]
-    E --> H[Statistics]
-    E --> I[IQR Outlier Detection]
+    C --> J["Validation Engine"]
 
-    C --> J[Validation Engine]
+    J --> K["Unique Key Rules"]
+    J --> L["Range Rules"]
+    J --> M["Format Rules"]
 
-    J --> K[Unique Key Rules]
-    J --> L[Range Rules]
-    J --> M[Format Rules]
-
-    F --> N[Quality Scoring]
+    F --> N["Quality Scoring"]
     G --> N
     K --> N
     L --> N
     M --> N
 
-    H --> O[Report Generator]
+    H --> O["Report Generator"]
     I --> O
     N --> O
 
-    O --> P[TXT Report]
-    O --> Q[JSON Report]
-
-
-On GitHub, that should render conceptually as:
-
-```text
-CSV Dataset ─────┐
-                 ↓
-JSON Rules ─→ DataGuard Engine
-                 │
-         ┌───────┴────────┐
-         ↓                ↓
-   Data Profiler    Validation Engine
-         │                │
-    ┌────┼────┐       ┌───┼────┐
-    ↓    ↓    ↓       ↓   ↓    ↓
-Missing Dupes Stats  Unique Range Format
-    │    │            │    │    │
-    └────┴────────────┴────┴────┘
-                     ↓
-              Quality Scoring
-                     ↓
-              Report Generator
-                ↓          ↓
-               TXT        JSON
+    O --> P["TXT Report"]
+    O --> Q["JSON Report"]
 ```
-
-
 
 ## Key Features
 
@@ -153,7 +126,7 @@ dataguard/
 │
 ├── .gitignore
 └── README.md
-````
+```
 
 ---
 
