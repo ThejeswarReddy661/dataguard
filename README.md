@@ -479,7 +479,3 @@ reports/
 ├── customers_quality_report.txt
 └── customers_quality_report.json
 ```
-
-# Local tool metadata
-
-.rocketride/
