@@ -26,3 +26,7 @@ data/*.xlsx
 # Temporary files
 *.tmp
 *.log
+
+# Local tool metadata
+
+.rocketride/
