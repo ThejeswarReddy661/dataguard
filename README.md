@@ -1,5 +1,9 @@
 # DataGuard 🛡️
 
+[![DataGuard Tests](https://github.com/ThejeswarReddy661/dataguard/actions/workflows/tests.yml/badge.svg)](https://github.com/ThejeswarReddy661/dataguard/actions/workflows/tests.yml)
+
+### Config-Driven Data Quality Validation & Profiling Engine
+
 ### Config-Driven Data Quality Validation & Profiling Engine
 
 DataGuard is a lightweight Python data quality framework that automatically profiles CSV datasets, validates configurable business rules, detects anomalies, calculates a data quality score, and generates human-readable and machine-readable reports.
