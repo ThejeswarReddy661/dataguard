@@ -456,3 +456,43 @@ reports/
 ├── customers_quality_report.txt
 └── customers_quality_report.json
 ```
+
+## Performance Benchmark
+
+DataGuard was benchmarked locally on a synthetic customer dataset containing **500,000 rows** (~27 MB).
+
+The benchmark dataset intentionally included:
+
+- 334 missing email values
+- 200 invalid age values
+- 166 malformed email values
+- 100 salary outliers
+
+DataGuard completed:
+
+- CSV loading
+- Missing-value profiling
+- Duplicate checks
+- Config-driven validation
+- IQR outlier detection
+- Quality scoring
+- TXT report generation
+- JSON report generation
+
+in approximately:
+
+```text
+1.69 seconds total runtime
+```
+
+Example command:
+
+```bash
+time python3 src/main.py data/large_customers.csv config/rules.json
+```
+
+The dataset can be regenerated with:
+
+```bash
+python3 src/generate_large_dataset.py
+```

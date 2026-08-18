@@ -77,12 +77,9 @@ def load_inputs():
         print("=" * 60)
         print("DATAGUARD ERROR")
         print("=" * 60)
-
-        print(
-            f"\nERROR: {error}"
-        )
-
+        print(f"\nERROR: {error}")
         print()
+
         sys.exit(1)
 
     except ValueError as error:
@@ -90,12 +87,9 @@ def load_inputs():
         print("=" * 60)
         print("DATAGUARD ERROR")
         print("=" * 60)
-
-        print(
-            f"\nERROR: {error}"
-        )
-
+        print(f"\nERROR: {error}")
         print()
+
         sys.exit(1)
 
     return (
@@ -116,6 +110,10 @@ def load_inputs():
 ) = load_inputs()
 
 
+# --------------------------------------------------
+# DATASET OVERVIEW
+# --------------------------------------------------
+
 total_rows = len(rows)
 total_columns = len(columns)
 total_cells = (
@@ -123,6 +121,10 @@ total_cells = (
     * total_columns
 )
 
+
+# --------------------------------------------------
+# MISSING VALUES
+# --------------------------------------------------
 
 missing_counts = count_missing_values(
     rows,
@@ -133,6 +135,10 @@ total_missing = sum(
     missing_counts.values()
 )
 
+
+# --------------------------------------------------
+# DUPLICATE ROWS
+# --------------------------------------------------
 
 duplicate_count = count_duplicate_rows(
     rows,
@@ -148,6 +154,10 @@ duplicate_severity = get_severity(
     duplicate_percentage
 )
 
+
+# --------------------------------------------------
+# CONFIGURED RULES
+# --------------------------------------------------
 
 unique_results = run_unique_rules(
     rows,
@@ -173,6 +183,25 @@ outlier_results = run_outlier_rules(
     rules
 )
 
+
+# --------------------------------------------------
+# COUNT DUPLICATE KEY ISSUES
+# --------------------------------------------------
+
+duplicate_key_issues = 0
+
+for result in unique_results.values():
+    if "error" in result:
+        continue
+
+    duplicate_key_issues += len(
+        result["duplicate_values"]
+    )
+
+
+# --------------------------------------------------
+# COUNT VALIDATION ISSUES
+# --------------------------------------------------
 
 validation_issue_count = 0
 validation_check_count = 0
@@ -204,19 +233,44 @@ for result in format_results.values():
     )
 
 
+# --------------------------------------------------
+# COUNT OUTLIERS
+# --------------------------------------------------
+
+outlier_count = 0
+
+for result in outlier_results.values():
+    if "error" in result:
+        continue
+
+    outlier_count += len(
+        result["outliers"]
+    )
+
+
+# --------------------------------------------------
+# QUALITY SCORE V2
+# --------------------------------------------------
+
 quality_score = calculate_quality_score(
     total_rows=total_rows,
     total_cells=total_cells,
     total_missing=total_missing,
     duplicate_rows=duplicate_count,
+    duplicate_key_issues=duplicate_key_issues,
     validation_issue_count=(
         validation_issue_count
     ),
     validation_check_count=(
         validation_check_count
     ),
+    outlier_count=outlier_count,
 )
 
+
+# --------------------------------------------------
+# BUILD TEXT REPORT
+# --------------------------------------------------
 
 report_text = build_report(
     data_file=DATA_FILE,
@@ -237,6 +291,10 @@ report_text = build_report(
 )
 
 
+# --------------------------------------------------
+# BUILD JSON REPORT
+# --------------------------------------------------
+
 json_report = build_json_report(
     data_file=DATA_FILE,
     rules_file=RULES_FILE,
@@ -256,10 +314,18 @@ json_report = build_json_report(
 )
 
 
+# --------------------------------------------------
+# DISPLAY REPORT
+# --------------------------------------------------
+
 print()
 print(report_text)
 print()
 
+
+# --------------------------------------------------
+# SAVE REPORTS
+# --------------------------------------------------
 
 try:
     text_report_path = save_report(
@@ -276,7 +342,8 @@ try:
 
 except OSError as error:
     print(
-        f"WARNING: Report could not be saved: {error}"
+        f"WARNING: Report could not be saved: "
+        f"{error}"
     )
 
 else:

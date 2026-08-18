@@ -3,6 +3,29 @@ import json
 from helpers import get_percentage, get_severity
 
 
+SAMPLE_LIMIT = 5
+
+
+def format_sample_values(values):
+    values = list(values)
+
+    if not values:
+        return []
+
+    return values[:SAMPLE_LIMIT]
+
+
+def get_remaining_count(values):
+    values = list(values)
+
+    remaining = len(values) - SAMPLE_LIMIT
+
+    if remaining < 0:
+        return 0
+
+    return remaining
+
+
 def build_report(
     data_file,
     rules_file,
@@ -30,13 +53,21 @@ def build_report(
     lines.append(f"Dataset: {data_file.name}")
     lines.append(f"Rules: {rules_file.name}")
 
+    # --------------------------------------------------
+    # DATASET OVERVIEW
+    # --------------------------------------------------
+
     lines.append("")
     lines.append("DATASET OVERVIEW")
     lines.append("-" * 60)
 
-    lines.append(f"Rows: {total_rows}")
+    lines.append(f"Rows: {total_rows:,}")
     lines.append(f"Columns: {total_columns}")
-    lines.append(f"Total cells: {total_cells}")
+    lines.append(f"Total cells: {total_cells:,}")
+
+    # --------------------------------------------------
+    # MISSING VALUES
+    # --------------------------------------------------
 
     lines.append("")
     lines.append("MISSING VALUE ANALYSIS")
@@ -54,15 +85,20 @@ def build_report(
 
         lines.append(
             f"{column}: "
-            f"{count} missing "
+            f"{count:,} missing "
             f"({percentage:.1f}%) "
             f"- {severity}"
         )
 
     lines.append("")
     lines.append(
-        f"Total missing cells: {total_missing}"
+        f"Total missing cells: "
+        f"{total_missing:,}"
     )
+
+    # --------------------------------------------------
+    # DUPLICATE ROWS
+    # --------------------------------------------------
 
     lines.append("")
     lines.append("DUPLICATE ROW ANALYSIS")
@@ -70,10 +106,14 @@ def build_report(
 
     lines.append(
         f"Duplicate rows: "
-        f"{duplicate_count} "
+        f"{duplicate_count:,} "
         f"({duplicate_percentage:.1f}%) "
         f"- {duplicate_severity}"
     )
+
+    # --------------------------------------------------
+    # UNIQUE RULES
+    # --------------------------------------------------
 
     lines.append("")
     lines.append("UNIQUE COLUMN RULES")
@@ -93,9 +133,9 @@ def build_report(
                 )
                 continue
 
-            duplicate_values = result[
-                "duplicate_values"
-            ]
+            duplicate_values = sorted(
+                result["duplicate_values"]
+            )
 
             count = len(
                 duplicate_values
@@ -112,20 +152,34 @@ def build_report(
 
             lines.append(
                 f"{column}: "
-                f"{count} duplicate key value(s) "
+                f"{count:,} duplicate key value(s) "
                 f"({percentage:.1f}%) "
                 f"- {severity}"
             )
 
             if duplicate_values:
-                lines.append(
-                    "Repeated values: "
-                    + str(
-                        sorted(
-                            duplicate_values
-                        )
-                    )
+                sample_values = format_sample_values(
+                    duplicate_values
                 )
+
+                lines.append(
+                    f"Sample repeated values: "
+                    f"{sample_values}"
+                )
+
+                remaining = get_remaining_count(
+                    duplicate_values
+                )
+
+                if remaining > 0:
+                    lines.append(
+                        f"... {remaining:,} additional "
+                        f"duplicate value(s)"
+                    )
+
+    # --------------------------------------------------
+    # RANGE RULES
+    # --------------------------------------------------
 
     lines.append("")
     lines.append("RANGE VALIDATION RULES")
@@ -189,7 +243,7 @@ def build_report(
 
             lines.append(
                 f"{column}: "
-                f"{count} invalid "
+                f"{count:,} invalid "
                 f"({percentage:.1f}%) "
                 f"- {severity}"
             )
@@ -199,12 +253,28 @@ def build_report(
             )
 
             if invalid_values:
-                lines.append(
-                    "Invalid values: "
-                    + str(
-                        invalid_values
-                    )
+                sample_values = format_sample_values(
+                    invalid_values
                 )
+
+                lines.append(
+                    f"Sample invalid values: "
+                    f"{sample_values}"
+                )
+
+                remaining = get_remaining_count(
+                    invalid_values
+                )
+
+                if remaining > 0:
+                    lines.append(
+                        f"... {remaining:,} additional "
+                        f"violation(s)"
+                    )
+
+    # --------------------------------------------------
+    # FORMAT RULES
+    # --------------------------------------------------
 
     lines.append("")
     lines.append("FORMAT VALIDATION RULES")
@@ -243,7 +313,7 @@ def build_report(
 
             lines.append(
                 f"{column}: "
-                f"{count} invalid "
+                f"{count:,} invalid "
                 f"({percentage:.1f}%) "
                 f"- {severity}"
             )
@@ -254,12 +324,28 @@ def build_report(
             )
 
             if invalid_values:
-                lines.append(
-                    "Invalid values: "
-                    + str(
-                        invalid_values
-                    )
+                sample_values = format_sample_values(
+                    invalid_values
                 )
+
+                lines.append(
+                    f"Sample invalid values: "
+                    f"{sample_values}"
+                )
+
+                remaining = get_remaining_count(
+                    invalid_values
+                )
+
+                if remaining > 0:
+                    lines.append(
+                        f"... {remaining:,} additional "
+                        f"violation(s)"
+                    )
+
+    # --------------------------------------------------
+    # OUTLIER ANALYSIS
+    # --------------------------------------------------
 
     lines.append("")
     lines.append("OUTLIER ANALYSIS")
@@ -319,7 +405,7 @@ def build_report(
 
             lines.append(
                 f"Potential outliers: "
-                f"{len(outliers)}"
+                f"{len(outliers):,}"
             )
 
             if details:
@@ -354,12 +440,28 @@ def build_report(
                     for value in outliers
                 ]
 
-                lines.append(
-                    "Outlier values: "
-                    + str(
-                        formatted_outliers
-                    )
+                sample_values = format_sample_values(
+                    formatted_outliers
                 )
+
+                lines.append(
+                    f"Sample outlier values: "
+                    f"{sample_values}"
+                )
+
+                remaining = get_remaining_count(
+                    formatted_outliers
+                )
+
+                if remaining > 0:
+                    lines.append(
+                        f"... {remaining:,} additional "
+                        f"outlier(s)"
+                    )
+
+    # --------------------------------------------------
+    # QUALITY SCORE
+    # --------------------------------------------------
 
     lines.append("")
     lines.append("=" * 60)
@@ -433,7 +535,7 @@ def build_json_report(
             "count": count,
             "percentage": round(
                 percentage,
-                1
+                3
             ),
             "severity": get_severity(
                 percentage
@@ -462,10 +564,12 @@ def build_json_report(
             "duplicate_key_count": len(
                 duplicate_values
             ),
-            "duplicate_values": duplicate_values,
+            "duplicate_values": (
+                duplicate_values
+            ),
             "percentage": round(
                 percentage,
-                1
+                3
             ),
             "severity": get_severity(
                 percentage
@@ -496,10 +600,12 @@ def build_json_report(
             "invalid_count": len(
                 invalid_values
             ),
-            "invalid_values": invalid_values,
+            "invalid_values": (
+                invalid_values
+            ),
             "percentage": round(
                 percentage,
-                1
+                3
             ),
             "severity": get_severity(
                 percentage
@@ -525,14 +631,18 @@ def build_json_report(
         )
 
         format_report[column] = {
-            "rule_type": result["rule_type"],
+            "rule_type": result[
+                "rule_type"
+            ],
             "invalid_count": len(
                 invalid_values
             ),
-            "invalid_values": invalid_values,
+            "invalid_values": (
+                invalid_values
+            ),
             "percentage": round(
                 percentage,
-                1
+                3
             ),
             "severity": get_severity(
                 percentage
@@ -581,9 +691,11 @@ def build_json_report(
             "count": duplicate_count,
             "percentage": round(
                 duplicate_percentage,
-                1
+                3
             ),
-            "severity": duplicate_severity,
+            "severity": (
+                duplicate_severity
+            ),
         },
 
         "unique_rules": unique_report,
@@ -592,7 +704,9 @@ def build_json_report(
 
         "format_rules": format_report,
 
-        "outlier_analysis": outlier_report,
+        "outlier_analysis": (
+            outlier_report
+        ),
 
         "quality_score": {
             "score": quality_score,

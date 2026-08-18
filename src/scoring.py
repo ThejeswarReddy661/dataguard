@@ -6,17 +6,17 @@ def calculate_quality_score(
     total_cells,
     total_missing,
     duplicate_rows,
+    duplicate_key_issues,
     validation_issue_count,
-    validation_check_count
+    validation_check_count,
+    outlier_count,
 ):
-    if total_rows == 0:
-        return 0.0
-
-    if total_cells == 0:
+    if total_rows == 0 or total_cells == 0:
         return 0.0
 
     # --------------------------------------------------
-    # COMPLETENESS SCORE
+    # COMPLETENESS
+    # Weight: 30%
     # --------------------------------------------------
 
     missing_percentage = get_percentage(
@@ -25,26 +25,41 @@ def calculate_quality_score(
     )
 
     completeness_score = max(
-        0,
-        100 - missing_percentage
+        0.0,
+        100.0 - missing_percentage
     )
 
+
     # --------------------------------------------------
-    # UNIQUENESS SCORE
+    # UNIQUENESS
+    # Weight: 25%
+    #
+    # Includes:
+    # - exact duplicate rows
+    # - duplicate configured key values
     # --------------------------------------------------
 
-    duplicate_percentage = get_percentage(
-        duplicate_rows,
+    uniqueness_issues = (
+        duplicate_rows
+        + duplicate_key_issues
+    )
+
+    uniqueness_percentage = get_percentage(
+        uniqueness_issues,
         total_rows
     )
 
     uniqueness_score = max(
-        0,
-        100 - duplicate_percentage
+        0.0,
+        100.0 - uniqueness_percentage
     )
 
+
     # --------------------------------------------------
-    # VALIDITY SCORE
+    # VALIDITY
+    # Weight: 35%
+    #
+    # Includes configured range and format rules.
     # --------------------------------------------------
 
     if validation_check_count == 0:
@@ -57,21 +72,65 @@ def calculate_quality_score(
         )
 
         validity_score = max(
-            0,
-            100 - invalid_percentage
+            0.0,
+            100.0 - invalid_percentage
         )
 
+
     # --------------------------------------------------
-    # OVERALL SCORE
+    # ANOMALY HEALTH
+    # Weight: 10%
+    #
+    # Outliers are not necessarily invalid.
+    # They receive a smaller weight.
+    # --------------------------------------------------
+
+    outlier_percentage = get_percentage(
+        outlier_count,
+        total_rows
+    )
+
+    anomaly_score = max(
+        0.0,
+        100.0 - outlier_percentage
+    )
+
+
+    # --------------------------------------------------
+    # WEIGHTED OVERALL SCORE
     # --------------------------------------------------
 
     overall_score = (
-        completeness_score
-        + uniqueness_score
-        + validity_score
-    ) / 3
+        completeness_score * 0.30
+        + uniqueness_score * 0.25
+        + validity_score * 0.35
+        + anomaly_score * 0.10
+    )
 
-    return round(
+
+    # --------------------------------------------------
+    # PREVENT FALSE PERFECT SCORE
+    # --------------------------------------------------
+
+    total_issues = (
+        total_missing
+        + duplicate_rows
+        + duplicate_key_issues
+        + validation_issue_count
+        + outlier_count
+    )
+
+    rounded_score = round(
         overall_score,
         1
     )
+
+    # A dataset with detected problems should not
+    # display 100.0 due only to rounding.
+    if (
+        total_issues > 0
+        and rounded_score >= 100.0
+    ):
+        rounded_score = 99.9
+
+    return rounded_score
