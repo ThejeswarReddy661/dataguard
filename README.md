@@ -1,6 +1,7 @@
 # DataGuard 🛡️
 
 [![DataGuard Tests](https://github.com/ThejeswarReddy661/dataguard/actions/workflows/tests.yml/badge.svg)](https://github.com/ThejeswarReddy661/dataguard/actions/workflows/tests.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://dataguard-thejeswar.streamlit.app)
 
 ## Config-Driven Data Quality Validation & Profiling Engine
 
@@ -11,6 +12,20 @@ The same core engine supports both a **command-line workflow** for repeatable va
 Instead of hard-coding validation logic for every dataset, dataset-specific expectations live in JSON configuration files. The engine stays reusable while the rules change.
 
 ---
+
+## Live Demo
+
+**Try DataGuard in your browser:** https://dataguard-thejeswar.streamlit.app
+
+The deployed Streamlit app supports:
+
+- Demo datasets, including the 500,000-row benchmark dataset
+- Executive data-health summary
+- Top-priority findings and recommended actions
+- Visual analytics and score explanation
+- Technical drill-down for analysts and engineers
+- Custom CSV + JSON validation-rule upload
+- TXT and JSON report downloads
 
 ## Why DataGuard?
 

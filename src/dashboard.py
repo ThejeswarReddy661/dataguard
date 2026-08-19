@@ -26,6 +26,12 @@ from profiler import (
 )
 from reporting import build_json_report, build_report
 from scoring import calculate_quality_score
+from history import (
+    calculate_score_change,
+    create_snapshot,
+    get_dataset_history,
+    save_snapshot,
+)
 from validators import (
     run_format_rules,
     run_range_rules,
@@ -600,6 +606,54 @@ def render_action_card(number, title, description):
         card_html,
         unsafe_allow_html=True,
     )
+
+
+def format_snapshot_time(timestamp):
+    """
+    Convert an ISO timestamp into a short,
+    readable dashboard label.
+    """
+
+    if not timestamp:
+        return "Unknown"
+
+    try:
+        from datetime import datetime
+
+        parsed = datetime.fromisoformat(
+            timestamp.replace(
+                "Z",
+                "+00:00",
+            )
+        )
+
+        return parsed.strftime(
+            "%b %d, %Y %H:%M"
+        )
+
+    except (
+        ValueError,
+        TypeError,
+    ):
+        return str(timestamp)
+
+
+def build_history_chart_data(history):
+    """
+    Return compact chart data for Streamlit.
+    """
+
+    return {
+        "Quality Score": [
+            float(
+                snapshot.get(
+                    "quality_score",
+                    0,
+                )
+            )
+            for snapshot in history
+        ]
+    }
 
 
 def count_duplicate_key_issues(unique_results):
@@ -2039,6 +2093,256 @@ with explain2:
     )
 
 
+# QUALITY HISTORY & TREND
+# ============================================================
+
+st.markdown(
+    '<div class="dg-section-title">'
+    'Quality Trend'
+    '</div>',
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    '<div class="dg-section-description">'
+    'Save intentional quality snapshots and compare '
+    'how the same dataset changes over time.'
+    '</div>',
+    unsafe_allow_html=True,
+)
+
+
+with st.container(border=True):
+
+    trend_left, trend_right = st.columns(
+        [2, 1]
+    )
+
+    with trend_left:
+
+        st.markdown(
+            "#### Track this dataset over time"
+        )
+
+        st.write(
+            "DataGuard does not save a snapshot on every "
+            "Streamlit rerun. Use the button when you want "
+            "to intentionally record the current quality state."
+        )
+
+        st.caption(
+            "A snapshot stores the score and issue counts, "
+            "not the full dataset."
+        )
+
+    with trend_right:
+
+        save_clicked = st.button(
+            "Save Quality Snapshot",
+            type="primary",
+            use_container_width=True,
+        )
+
+
+if save_clicked:
+
+    snapshot = create_snapshot(
+        dataset=data_file.name,
+        rows=total_rows,
+        columns=total_columns,
+        quality_score=quality_score,
+        missing_values=total_missing,
+        duplicate_rows=duplicate_count,
+        invalid_values=validation_issue_count,
+        unusual_values=outlier_count,
+        analysis_seconds=analysis_seconds,
+    )
+
+    saved_path = save_snapshot(
+        snapshot,
+        PROJECT_ROOT,
+    )
+
+    st.success(
+        "Quality snapshot saved for "
+        f"{data_file.name}."
+    )
+
+
+dataset_history = get_dataset_history(
+    PROJECT_ROOT,
+    data_file.name,
+)
+
+
+if not dataset_history:
+
+    st.info(
+        "No saved quality history exists for this "
+        "dataset yet. Save the first snapshot to begin "
+        "tracking changes."
+    )
+
+else:
+
+    score_change = calculate_score_change(
+        dataset_history
+    )
+
+    history_metric1, history_metric2, history_metric3 = (
+        st.columns(3)
+    )
+
+    latest_snapshot = dataset_history[-1]
+
+    history_metric1.metric(
+        "Saved Snapshots",
+        f"{len(dataset_history):,}",
+    )
+
+    history_metric2.metric(
+        "Latest Saved Score",
+        f"{latest_snapshot['quality_score']:.1f}/100",
+    )
+
+    if score_change is None:
+
+        history_metric3.metric(
+            "Change vs Previous",
+            "N/A",
+        )
+
+    else:
+
+        change = score_change[
+            "change"
+        ]
+
+        history_metric3.metric(
+            "Change vs Previous",
+            f"{change:+.2f}",
+            delta=f"{change:+.2f}",
+            delta_color=(
+                "normal"
+                if change >= 0
+                else "inverse"
+            ),
+        )
+
+
+    with st.container(border=True):
+
+        st.markdown(
+            "#### Quality Score Trend"
+        )
+
+        st.caption(
+            "Each point represents an intentional "
+            "saved snapshot for this dataset."
+        )
+
+        st.line_chart(
+            build_history_chart_data(
+                dataset_history
+            ),
+            height=260,
+        )
+
+
+    history_rows = []
+
+    for snapshot in reversed(
+        dataset_history[-10:]
+    ):
+
+        history_rows.append(
+            {
+                "Saved At (UTC)": format_snapshot_time(
+                    snapshot.get(
+                        "timestamp"
+                    )
+                ),
+                "Score": snapshot.get(
+                    "quality_score"
+                ),
+                "Missing": snapshot.get(
+                    "missing_values"
+                ),
+                "Duplicates": snapshot.get(
+                    "duplicate_rows"
+                ),
+                "Invalid": snapshot.get(
+                    "invalid_values"
+                ),
+                "Unusual": snapshot.get(
+                    "unusual_values"
+                ),
+                "Analysis Seconds": snapshot.get(
+                    "analysis_seconds"
+                ),
+            }
+        )
+
+    with st.expander(
+        "View Recent Saved Snapshots"
+    ):
+
+        st.dataframe(
+            history_rows,
+            use_container_width=True,
+            hide_index=True,
+        )
+
+
+    if score_change is not None:
+
+        previous_score = score_change[
+            "previous_score"
+        ]
+
+        current_score = score_change[
+            "current_score"
+        ]
+
+        change = score_change[
+            "change"
+        ]
+
+        if change > 0:
+
+            st.success(
+                f"Quality improved by {change:.2f} points "
+                f"from {previous_score:.1f} to "
+                f"{current_score:.1f}."
+            )
+
+        elif change < 0:
+
+            st.warning(
+                f"Quality declined by {abs(change):.2f} points "
+                f"from {previous_score:.1f} to "
+                f"{current_score:.1f}. Review the latest "
+                f"findings before downstream use."
+            )
+
+        else:
+
+            st.info(
+                "The latest saved quality score is unchanged "
+                "from the previous snapshot."
+            )
+
+
+st.caption(
+    "Deployment note: the current history implementation "
+    "uses a lightweight local JSONL file. On hosted environments "
+    "with ephemeral storage, history may reset when the app "
+    "restarts or is redeployed. A database or cloud store would "
+    "be the production persistence layer."
+)
+
+
+# ============================================================
 # ADVANCED ANALYSIS
 # ============================================================
 
